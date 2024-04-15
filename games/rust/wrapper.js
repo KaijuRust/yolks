@@ -31,6 +31,12 @@ function filter(data) {
 		seenPercentage[percentage] = true;
 	}
 
+	// Handle process fatal/crash
+	if (str.contains("Main game process exited with code")) {
+		process.exit();
+		return;
+	}
+
 	console.log(str);
 }
 
