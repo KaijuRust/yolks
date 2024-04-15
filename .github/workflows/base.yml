@@ -36,4 +36,4 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ghcr.io/KaijuRust/yolks:${{ matrix.oses }}
+            ghcr.io/kaijurust/yolks:${{ matrix.oses }}
