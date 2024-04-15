@@ -24,17 +24,18 @@ const seenPercentage = {};
 
 function filter(data) {
 	const str = data.toString();
-	if (str.startsWith("Loading Prefab Bundle ")) { // Rust seems to spam the same percentage, so filter out any duplicates.
-		const percentage = str.substr("Loading Prefab Bundle ".length);
-		if (seenPercentage[percentage]) return;
-
-		seenPercentage[percentage] = true;
-	}
 
 	// Handle process fatal/crash
 	if (str.contains("Main game process exited with code")) {
 		process.exit();
 		return;
+	}
+
+	if (str.startsWith("Loading Prefab Bundle ")) { // Rust seems to spam the same percentage, so filter out any duplicates.
+		const percentage = str.substr("Loading Prefab Bundle ".length);
+		if (seenPercentage[percentage]) return;
+
+		seenPercentage[percentage] = true;
 	}
 
 	console.log(str);
