@@ -96,14 +96,13 @@ var poll = function () {
 		// Just started
 		if (pollingStartTime == undefined) {
 			pollingStartTime = performance.now();
-		}
-		// } else {
-		// 	let endTime = performance.now();
-		// 	let timeElapsed = endTime - pollingStartTime;
+		} else {
+			let endTime = performance.now();
+			let timeElapsed = endTime - pollingStartTime;
 
-		// 	var pollingDuration = Math.round(timeElapsed /= 1000);
-		// 	console.log("Polling for RCON to come up... (" + pollingDuration + "s).");
-		// }
+			var pollingDuration = Math.round(timeElapsed /= 1000);
+			console.log("Polling for RCON to come up... (" + pollingDuration + "s).");
+		}
 	}
 
 	var serverHostname = process.env.RCON_IP ? process.env.RCON_IP : "localhost";
@@ -150,15 +149,14 @@ var poll = function () {
 	});
 
 	ws.on("error", function (err) {
-		if (!waiting)
-			pollingStartTime = performance.now();
-
 		waiting = true;
 
 		let endTime = performance.now();
-		let timeElapsed = Math.round((endTime - pollingStartTime) /= 1000);
+		let timeElapsed = endTime - pollingStartTime;
 
-		console.log("Waiting for RCON to come up... ("+timeElapsed+"s).");
+		var pollingDuration = Math.round(timeElapsed /= 1000);
+
+		console.log("Waiting for RCON to come up... (" + pollingDuration + "s)");
 		setTimeout(poll, 5000);
 	});
 
