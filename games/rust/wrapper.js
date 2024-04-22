@@ -95,7 +95,8 @@ var poll = function () {
 		if (pollingStartTime === undefined) {
 			pollingStartTime = new Date();
 		} else {
-			var pollingDuration = Math.round((new Date() - pollingStartTime) /= 1000);
+			var currentTime = new Date();
+			var pollingDuration = Math.round((currentTime - pollingStartTime) /= 1000);
 			console.log("Polling for RCON to come up... (" + pollingDuration + "s)");
 		}
 	}
