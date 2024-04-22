@@ -27,12 +27,6 @@ const seenPercentage = {};
 function filter(data) {
 	const str = data.toString();
 
-	// Handle process fatal/crash
-	if (str.includes("Main game process exited with code") || str.search(/generating procedural map of size/i) !== -1) {
-		console.log(`PROCESS CRASHED: ${str}`);
-		process.exit(1);
-	}
-
 	if (str.startsWith("Loading Prefab Bundle ")) { // Rust seems to spam the same percentage, so filter out any duplicates.
 		const percentage = str.substr("Loading Prefab Bundle ".length);
 		if (seenPercentage[percentage]) return;
@@ -145,6 +139,14 @@ var poll = function () {
 		let timeElapsed = endTime - pollingStartTime;
 
 		var pollingDuration = Math.round(timeElapsed /= 1000);
+
+		// If the server is taking too long to start, we should exit.
+		if (pollingDuration > 900) {
+			console.log("RCON server took too long (15 minutes) to start. Exiting...");
+
+			gameProcess.kill("SIGKILL");
+			process.exit(1);
+		}
 
 		console.log("Waiting for RCON to come up... (" + pollingDuration + "s)");
 		setTimeout(poll, 5000);
