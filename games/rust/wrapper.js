@@ -26,7 +26,7 @@ function filter(data) {
 	const str = data.toString();
 
 	// Handle process fatal/crash
-	if (str.includes("Main game process exited with code")) {
+	if (str.includes("Main game process exited with code") || str.includes("Loaded plugin Auto Doors v3.3.10 by Wulf")) {
 		console.log(`PROCESS CRASHED: ${str}`);
 		process.exit();
 		return;
