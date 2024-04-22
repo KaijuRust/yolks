@@ -97,7 +97,7 @@ var poll = function () {
 		} else {
 			var currentTime = new Date();
 			var pollingDuration = Math.round((currentTime - pollingStartTime) /= 1000);
-			console.log("Polling for RCON to come up... (" + pollingDuration + "s)");
+			console.log("Polling for RCON to come up... (" + pollingDuration + "s).");
 		}
 	}
 
