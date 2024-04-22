@@ -80,6 +80,8 @@ process.on('exit', function (code) {
 });
 
 var waiting = true;
+var pollingStartTime = undefined;
+
 var poll = function () {
 	function createPacket(command) {
 		var packet = {
@@ -88,6 +90,16 @@ var poll = function () {
 			Name: "WebRcon"
 		};
 		return JSON.stringify(packet);
+	}
+
+	if (waiting === true) {
+		// Just started
+		if (pollingStartTime === undefined) {
+			pollingStartTime = new Date();
+		} else {
+			var pollingDuration = Math.round((new Date() - pollingStartTime) /= 1000);
+			console.log("Polling for RCON to come up... (" + pollingDuration + "s)");
+		}
 	}
 
 	var serverHostname = process.env.RCON_IP ? process.env.RCON_IP : "localhost";
@@ -99,6 +111,7 @@ var poll = function () {
 	ws.on("open", function open() {
 		console.log("Connected to RCON. Generating the map now. Please wait until the server status switches to \"Running\".");
 		waiting = false;
+		pollingStartTime = undefined;
 
 		// Hack to fix broken console output
 		ws.send(createPacket('status'));
@@ -134,6 +147,7 @@ var poll = function () {
 
 	ws.on("error", function (err) {
 		waiting = true;
+		pollingStartTime = new Date();
 		console.log("Waiting for RCON to come up...");
 		setTimeout(poll, 5000);
 	});
