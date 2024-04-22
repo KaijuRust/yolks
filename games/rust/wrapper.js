@@ -92,12 +92,14 @@ var poll = function () {
 
 	if (waiting === true) {
 		// Just started
-		if (pollingStartTime === undefined) {
-			pollingStartTime = new Date();
+		if (pollingStartTime == undefined) {
+			pollingStartTime = performance.now();
 		} else {
-			var currentTime = new Date();
-			var pollingDuration = Math.round((currentTime - pollingStartTime) /= 1000);
-			console.log("Polling for RCON to come up... (" + pollingDuration + "s).");
+			let endTime = performance.now();
+			let timeElapsed = endTime - pollingStartTime;
+
+			// var pollingDuration = Math.round(timeElapsed /= 1000);
+			console.log("Polling for RCON to come up... (" + timeElapsed + "ms).");
 		}
 	}
 
@@ -146,7 +148,7 @@ var poll = function () {
 
 	ws.on("error", function (err) {
 		waiting = true;
-		pollingStartTime = new Date();
+		pollingStartTime = performance.now();
 		console.log("Waiting for RCON to come up...");
 		setTimeout(poll, 5000);
 	});
