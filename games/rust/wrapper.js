@@ -26,10 +26,12 @@ function filter(data) {
 	const str = data.toString();
 
 	// Handle process fatal/crash
-	if (str.includes("Main game process exited with code") || str.includes("Loaded plugin Auto Doors v3.3.10 by Wulf")) {
+	if (str.includes("Main game process exited with code") || str.search(/generating procedural map of size/i) !== -1) {
 		console.log(`PROCESS CRASHED: ${str}`);
 		process.exit();
 		return;
+	} else {
+		console.log(`[FILTER] String: '${str.trim()}'`);
 	}
 
 	if (str.startsWith("Loading Prefab Bundle ")) { // Rust seems to spam the same percentage, so filter out any duplicates.
