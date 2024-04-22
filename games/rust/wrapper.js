@@ -27,6 +27,7 @@ function filter(data) {
 
 	// Handle process fatal/crash
 	if (str.includes("Main game process exited with code")) {
+		console.log(`PROCESS CRASHED: ${str}`);
 		process.exit();
 		return;
 	}
