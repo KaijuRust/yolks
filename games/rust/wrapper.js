@@ -30,8 +30,7 @@ function filter(data) {
 	// Handle process fatal/crash
 	if (str.includes("Main game process exited with code") || str.search(/generating procedural map of size/i) !== -1) {
 		console.log(`PROCESS CRASHED: ${str}`);
-		process.exit();
-		return;
+		process.exit(1);
 	}
 
 	if (str.startsWith("Loading Prefab Bundle ")) { // Rust seems to spam the same percentage, so filter out any duplicates.
@@ -56,7 +55,7 @@ gameProcess.on('exit', function (code, signal) {
 
 	if (code) {
 		console.log("Main game process exited with code " + code);
-		// process.exit(code);
+		process.exit(code);
 	}
 });
 
@@ -92,17 +91,8 @@ var poll = function () {
 		return JSON.stringify(packet);
 	}
 
-	if (waiting === true) {
-		// Just started
-		if (pollingStartTime == undefined) {
-			pollingStartTime = performance.now();
-		} else {
-			let endTime = performance.now();
-			let timeElapsed = endTime - pollingStartTime;
-
-			var pollingDuration = Math.round(timeElapsed /= 1000);
-			console.log("Polling for RCON to come up... (" + pollingDuration + "s).");
-		}
+	if (waiting === true && pollingStartTime == undefined) {
+		pollingStartTime = performance.now();
 	}
 
 	var serverHostname = process.env.RCON_IP ? process.env.RCON_IP : "localhost";
@@ -165,7 +155,7 @@ var poll = function () {
 			console.log("Connection to server closed.");
 
 			exited = true;
-			process.exit();
+			process.exit(0);
 		}
 	});
 }
