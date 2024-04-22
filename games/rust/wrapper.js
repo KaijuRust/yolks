@@ -30,8 +30,6 @@ function filter(data) {
 		console.log(`PROCESS CRASHED: ${str}`);
 		process.exit();
 		return;
-	} else {
-		console.log(`[FILTER] String: '${str.trim()}'`);
 	}
 
 	if (str.startsWith("Loading Prefab Bundle ")) { // Rust seems to spam the same percentage, so filter out any duplicates.
