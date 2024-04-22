@@ -96,7 +96,12 @@ var poll = function () {
 	var ws = new WebSocket("ws://" + serverHostname + ":" + serverPort + "/" + serverPassword);
 
 	ws.on("open", function open() {
-		console.log("Connected to RCON. Generating the map now. Please wait until the server status switches to \"Running\".");
+		let endTime = performance.now();
+		let timeElapsed = endTime - pollingStartTime;
+
+		var pollingDuration = Math.round(timeElapsed /= 1000);
+
+		console.log("Connected to RCON ("+pollingDuration+"s). Generating the map now. Please wait until the server status switches to \"Running\".");
 		waiting = false;
 		pollingStartTime = undefined;
 
