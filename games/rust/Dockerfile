@@ -37,6 +37,7 @@ RUN			dpkg --add-architecture i386 \
 			&& apt install -y nodejs \
 			&& mkdir /node_modules \
 			&& npm install --prefix / ws \
+			&& npm install --prefix / perf_hooks \
 			&& useradd -d /home/container -m container
 
 USER 		container

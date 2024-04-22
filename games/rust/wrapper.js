@@ -6,6 +6,8 @@ fs.writeFile("latest.log", "", (err) => {
 	if (err) console.log("Callback error in appendFile:" + err);
 });
 
+const {performance} = require('perf_hooks');
+
 var args = process.argv.splice(process.execArgv.length + 2);
 for (var i = 0; i < args.length; i++) {
 	if (i === args.length - 1) {
