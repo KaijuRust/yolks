@@ -10,7 +10,10 @@ const lokiTransport = new LokiTransport({
   json: true,
   batching: false,
   basicAuth: `857711:${process.env.LOKI_PASSWORD}`,
-  labels: { 'application': 'rust', 'server-name': process.env.HOSTNAME }
+  labels: { 'app': 'grafanacloud-kaijuhosting-logs', 'server_name': process.env.HOSTNAME },
+  format: format.json(),
+  replaceTimestamp: true,
+  onConnectionError: (err) => console.error(err)
 });
 
 const myFormat = printf(({ message, timestamp }) => {
@@ -26,7 +29,7 @@ const logger = createLogger({
   ),
   transports: [
     lokiTransport, // Add Pino Loki transport
-    new transports.File({ filename: 'latest-winston.log' }),
+    new transports.File({ filename: 'latest.log' }),
     new transports.Console(), // Add other transports if needed
   ],
 });
