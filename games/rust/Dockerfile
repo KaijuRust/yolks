@@ -29,7 +29,13 @@ LABEL       org.opencontainers.image.licenses=MIT
 
 ENV         DEBIAN_FRONTEND=noninteractive
 
+USER 		container
+ENV  		USER=container HOME=/home/container
+
 WORKDIR 	/home/container
+
+COPY 		./entrypoint.sh /entrypoint.sh
+COPY 		./wrapper.js /wrapper.js
 
 RUN			dpkg --add-architecture i386 \
 			&& apt update \
@@ -43,11 +49,5 @@ RUN			dpkg --add-architecture i386 \
 			&& npm install --prefix / winston \
 			&& npm install --prefix / pino-loki \
 			&& useradd -d /home/container -m container
-
-USER 		container
-ENV  		USER=container HOME=/home/container
-
-COPY 		./entrypoint.sh /entrypoint.sh
-COPY 		./wrapper.js /wrapper.js
 
 CMD			[ "/bin/bash", "/entrypoint.sh" ]
