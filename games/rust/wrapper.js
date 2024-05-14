@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
-const winston = require('winston');
+const { createLogger, format, transports } = require('winston');
+const { combine, timestamp, printf } = format;
 const LokiTransport = require('winston-loki');
 
 // Create a Pino Loki transport
@@ -12,24 +13,32 @@ const lokiTransport = new LokiTransport({
   labels: { 'application': 'rust', 'server-name': process.env.HOSTNAME }
 });
 
+const myFormat = printf(({ message, timestamp }) => {
+  return `${timestamp} ${message}`;
+});
+
 // Create a Winston logger
-const logger = winston.createLogger({
+const logger = createLogger({
   level: 'info',
-  format: winston.format.json(),
+  format: combine(
+      timestamp(),
+      myFormat
+  ),
   transports: [
     lokiTransport, // Add Pino Loki transport
-    new winston.transports.File({ filename: 'latest-winston.log', format: winston.format.simple() }),
-    new winston.transports.Console({ format: winston.format.simple() }), // Add other transports if needed
+    new transports.File({ filename: 'latest-winston.log' }),
+    new transports.Console(), // Add other transports if needed
   ],
 });
 
+function sendLog(message) {
+    var processed = message.replace(/(^\s*(?!.+)\n+)|(\n+\s+(?!.+)$)/g, "")
+    if (processed.length === 0) return
+    logger.info(processed)
+}
 
 
 var startupCmd = "";
-const fs = require("fs");
-fs.writeFile("latest.log", "", (err) => {
-	if (err) console.log("Callback error in appendFile:" + err);
-});
 
 const {performance} = require('perf_hooks');
 
@@ -43,7 +52,7 @@ for (var i = 0; i < args.length; i++) {
 }
 
 if (startupCmd.length < 1) {
-	console.log("Error: Please specify a startup command.");
+	sendLog("Error: Please specify a startup command.");
 	process.exit();
 }
 
@@ -59,13 +68,11 @@ function filter(data) {
 		seenPercentage[percentage] = true;
 	}
 
-	// console.log(str);
-	logger.info(str);
+	sendLog(str);
 }
 
 var exec = require("child_process").exec;
-// console.log("Starting Rust...");
-logger.info('Starting Rust...');
+sendLog('Starting Rust...');
 
 var exited = false;
 const gameProcess = exec(startupCmd);
@@ -75,8 +82,7 @@ gameProcess.on('exit', function (code, signal) {
 	exited = true;
 
 	if (code) {
-		// console.log("Main game process exited with code " + code);
-		logger.info("Main game process exited with code " + code);
+		sendLog("Main game process exited with code " + code);
 
 		process.exit(code);
 	}
@@ -87,8 +93,7 @@ function initialListener(data) {
 	if (command === 'quit') {
 		gameProcess.kill('SIGTERM');
 	} else {
-		// console.log('Unable to run "' + command + '" due to RCON not being connected yet.');
-		logger.info('Unable to run "' + command + '" due to RCON not being connected yet.');
+		sendLog('Unable to run "' + command + '" due to RCON not being connected yet.');
 	}
 }
 process.stdin.resume();
@@ -98,8 +103,7 @@ process.stdin.on('data', initialListener);
 process.on('exit', function (code) {
 	if (exited) return;
 
-	// console.log("Received request to stop the process, stopping the game...");
-	logger.info("Received request to stop the process, stopping the game...");
+	sendLog("Received request to stop the process, stopping the game...");
 
 	gameProcess.kill('SIGTERM');
 });
@@ -133,8 +137,7 @@ var poll = function () {
 
 		var pollingDuration = Math.round(timeElapsed /= 1000);
 
-		// console.log("Connected to RCON ("+pollingDuration+"s). Generating the map now. Please wait until the server status switches to \"Running\".");
-		logger.info("Connected to RCON ("+pollingDuration+"s). Generating the map now. Please wait until the server status switches to \"Running\".");
+		sendLog("Connected to RCON ("+pollingDuration+"s). Generating the map now. Please wait until the server status switches to \"Running\".");
 
 		waiting = false;
 		pollingStartTime = undefined;
@@ -155,22 +158,14 @@ var poll = function () {
 			var json = JSON.parse(data);
 			if (json !== undefined) {
 				if (json.Message !== undefined && json.Message.length > 0) {
-					// console.log(json.Message);
-					logger.info(json.Message);
-
-					const fs = require("fs");
-					fs.appendFile("latest.log", "\n" + json.Message, (err) => {
-						if (err) console.log("Callback error in appendFile:" + err);
-					});
+					sendLog(json.Message);
 				}
 			} else {
-				// console.log("Error: Invalid JSON received");
-				logger.info("Error: Invalid JSON received");
+				sendLog("Error: Invalid JSON received");
 			}
 		} catch (e) {
 			if (e) {
-				// console.log(e);
-				logger.error(e);
+				sendLog(e);
 			}
 		}
 	});
@@ -185,22 +180,19 @@ var poll = function () {
 
 		// If the server is taking too long to start, we should exit.
 		if (pollingDuration > 900) {
-			// console.log("RCON server took too long (15 minutes) to start. Exiting...");
-			logger.info("RCON server took too long (15 minutes) to start. Exiting...");
+			sendLog("RCON server took too long (15 minutes) to start. Exiting...");
 
 			gameProcess.kill("SIGKILL");
 			process.exit(1);
 		}
 
-		// console.log("Waiting for RCON to come up... (" + pollingDuration + "s)");
-		logger.info("Waiting for RCON to come up... (" + pollingDuration + "s)");
+		sendLog("Waiting for RCON to come up... (" + pollingDuration + "s)");
 		setTimeout(poll, 5000);
 	});
 
 	ws.on("close", function () {
 		if (!waiting) {
-			// console.log("Connection to server closed.");
-			logger.info("Connection to server closed.");
+			sendLog("Connection to server closed.");
 
 			exited = true;
 			process.exit(0);
