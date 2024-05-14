@@ -36,6 +36,7 @@ RUN			dpkg --add-architecture i386 \
 			&& curl -sL https://deb.nodesource.com/setup_18.x | bash - \
 			&& apt install -y nodejs \
 			&& mkdir /node_modules \
+			&& npm install --global ws perf_hooks winston winston-loki \
 			&& useradd -d /home/container -m container
 
 USER 		container
@@ -46,6 +47,6 @@ WORKDIR 	/home/container
 COPY 		./entrypoint.sh /entrypoint.sh
 COPY 		./wrapper.js /wrapper.js
 
-RUN 		npm install --prefix ./ ws perf_hooks winston winston-loki
+# RUN 		npm install --prefix ./ ws perf_hooks winston winston-loki
 
 CMD			[ "/bin/bash", "/entrypoint.sh" ]
