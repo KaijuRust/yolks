@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "perf_hooks": "^0.0.1"
+  }
+}

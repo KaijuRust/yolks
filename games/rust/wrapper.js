@@ -1,5 +1,38 @@
 #!/usr/bin/env node
 
+const winston = require('winston');
+const pino = require('pino-loki');
+
+// Create a Pino Loki transport
+const transport = pino.transport<LokiTransportOptions>({
+  target: "pino-loki",
+  options: {
+    batching: true,
+    interval: 5,
+
+    labels: { 'application': 'rust', 'server-name': process.env.HOSTNAME },
+
+    host: 'https://logs-prod-026.grafana.net',
+    basicAuth: {
+      username: "857711",
+      password: process.env.LOKI_PASSWORD,
+    },
+  },
+});
+
+// Create a Winston logger
+const logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.json(),
+  transports: [
+    transport, // Add Pino Loki transport
+    new winston.transports.File({ filename: 'latest-winston.log', format: winston.format.simple() }),
+    new winston.transports.Console({ format: winston.format.simple() }), // Add other transports if needed
+  ],
+});
+
+
+
 var startupCmd = "";
 const fs = require("fs");
 fs.writeFile("latest.log", "", (err) => {
@@ -35,10 +68,12 @@ function filter(data) {
 	}
 
 	console.log(str);
+	logger.info(str);
 }
 
 var exec = require("child_process").exec;
 console.log("Starting Rust...");
+logger.info('Starting Rust...');
 
 var exited = false;
 const gameProcess = exec(startupCmd);
@@ -49,6 +84,8 @@ gameProcess.on('exit', function (code, signal) {
 
 	if (code) {
 		console.log("Main game process exited with code " + code);
+		logger.info("Main game process exited with code " + code);
+
 		process.exit(code);
 	}
 });
@@ -59,6 +96,7 @@ function initialListener(data) {
 		gameProcess.kill('SIGTERM');
 	} else {
 		console.log('Unable to run "' + command + '" due to RCON not being connected yet.');
+		logger.info('Unable to run "' + command + '" due to RCON not being connected yet.');
 	}
 }
 process.stdin.resume();
@@ -69,6 +107,8 @@ process.on('exit', function (code) {
 	if (exited) return;
 
 	console.log("Received request to stop the process, stopping the game...");
+	logger.info("Received request to stop the process, stopping the game...");
+
 	gameProcess.kill('SIGTERM');
 });
 
@@ -102,6 +142,8 @@ var poll = function () {
 		var pollingDuration = Math.round(timeElapsed /= 1000);
 
 		console.log("Connected to RCON ("+pollingDuration+"s). Generating the map now. Please wait until the server status switches to \"Running\".");
+		logger.info("Connected to RCON ("+pollingDuration+"s). Generating the map now. Please wait until the server status switches to \"Running\".");
+
 		waiting = false;
 		pollingStartTime = undefined;
 
@@ -122,6 +164,8 @@ var poll = function () {
 			if (json !== undefined) {
 				if (json.Message !== undefined && json.Message.length > 0) {
 					console.log(json.Message);
+					logger.info(json.Message);
+
 					const fs = require("fs");
 					fs.appendFile("latest.log", "\n" + json.Message, (err) => {
 						if (err) console.log("Callback error in appendFile:" + err);
@@ -129,10 +173,12 @@ var poll = function () {
 				}
 			} else {
 				console.log("Error: Invalid JSON received");
+				logger.info("Error: Invalid JSON received");
 			}
 		} catch (e) {
 			if (e) {
 				console.log(e);
+				logger.error(e);
 			}
 		}
 	});
@@ -148,18 +194,21 @@ var poll = function () {
 		// If the server is taking too long to start, we should exit.
 		if (pollingDuration > 900) {
 			console.log("RCON server took too long (15 minutes) to start. Exiting...");
+			logger.info("RCON server took too long (15 minutes) to start. Exiting...");
 
 			gameProcess.kill("SIGKILL");
 			process.exit(1);
 		}
 
 		console.log("Waiting for RCON to come up... (" + pollingDuration + "s)");
+		logger.info("Waiting for RCON to come up... (" + pollingDuration + "s)");
 		setTimeout(poll, 5000);
 	});
 
 	ws.on("close", function () {
 		if (!waiting) {
 			console.log("Connection to server closed.");
+			logger.info("Connection to server closed.");
 
 			exited = true;
 			process.exit(0);

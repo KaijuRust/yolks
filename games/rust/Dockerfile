@@ -38,6 +38,8 @@ RUN			dpkg --add-architecture i386 \
 			&& mkdir /node_modules \
 			&& npm install --prefix / ws \
 			&& npm install --prefix / perf_hooks \
+			&& npm install --prefix / winston \
+			&& npm install --prefix / pino-loki \
 			&& useradd -d /home/container -m container
 
 USER 		container
