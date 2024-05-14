@@ -46,6 +46,6 @@ WORKDIR 	/home/container
 COPY 		./entrypoint.sh /entrypoint.sh
 COPY 		./wrapper.js /wrapper.js
 
-RUN 		npm install --prefix / ws perf_hooks winston winston-loki
+RUN 		npm install ws perf_hooks winston winston-loki
 
 CMD			[ "/bin/bash", "/entrypoint.sh" ]
