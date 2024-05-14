@@ -1,23 +1,14 @@
 #!/usr/bin/env node
 
 const winston = require('winston');
-const pino = require('pino-loki');
+const LokiTransport = require('winston-loki');
 
 // Create a Pino Loki transport
-const transport = pino.transport<LokiTransportOptions>({
-  target: "pino-loki",
-  options: {
-    batching: true,
-    interval: 5,
-
-    labels: { 'application': 'rust', 'server-name': process.env.HOSTNAME },
-
-    host: 'https://logs-prod-026.grafana.net',
-    basicAuth: {
-      username: "857711",
-      password: process.env.LOKI_PASSWORD,
-    },
-  },
+const lokiTransport = new LokiTransport({
+  host: 'https://logs-prod-026.grafana.net',
+  json: true,
+  basicAuth: `857711:${process.env.LOKI_PASSWORD}`,
+  labels: { 'application': 'rust', 'server-name': process.env.HOSTNAME }
 });
 
 // Create a Winston logger
@@ -25,7 +16,7 @@ const logger = winston.createLogger({
   level: 'info',
   format: winston.format.json(),
   transports: [
-    transport, // Add Pino Loki transport
+    lokiTransport, // Add Pino Loki transport
     new winston.transports.File({ filename: 'latest-winston.log', format: winston.format.simple() }),
     new winston.transports.Console({ format: winston.format.simple() }), // Add other transports if needed
   ],
