@@ -98,7 +98,18 @@ if (LOKI_ENABLED === true) {
 function sendLog(message) {
     var processed = message.replace(/(^\s*(?!.+)\n+)|(\n+\s+(?!.+)$)/g, "").trim()
     if (processed.length === 0) return
-    logger.info(processed)
+
+    if (processed.startsWith('Exception thrown')) {
+        logger.warning(processed)
+    } else {
+        logger.info(processed)
+    }
+}
+
+function sendError(message) {
+    var processed = message.replace(/(^\s*(?!.+)\n+)|(\n+\s+(?!.+)$)/g, "").trim()
+    if (processed.length === 0) return
+    logger.error(processed)
 }
 
 var startupCmd = "";
@@ -114,7 +125,7 @@ for (var i = 0; i < args.length; i++) {
 }
 
 if (startupCmd.length < 1) {
-	sendLog("Error: Please specify a startup command.");
+	sendError("Error: Please specify a startup command.");
 	process.exit();
 }
 
@@ -144,8 +155,7 @@ gameProcess.on('exit', function (code, signal) {
 	exited = true;
 
 	if (code) {
-		sendLog("Main game process exited with code " + code);
-
+		sendError("Main game process exited with code " + code);
 		process.exit(code);
 	}
 });
@@ -165,7 +175,7 @@ process.stdin.on('data', initialListener);
 process.on('exit', function (code) {
 	if (exited) return;
 
-	sendLog("Received request to stop the process, stopping the game...");
+	sendError("Received request to stop the process, stopping the game...");
 
 	gameProcess.kill('SIGTERM');
 });
@@ -224,11 +234,11 @@ var poll = function () {
 					sendLog(json.Message);
 				}
 			} else {
-				sendLog("Error: Invalid JSON received");
+				sendError("Error: Invalid JSON received");
 			}
 		} catch (e) {
 			if (e) {
-				sendLog(e);
+				sendError(e);
 			}
 		}
 	});
@@ -243,7 +253,7 @@ var poll = function () {
 
 		// If the server is taking too long to start, we should exit.
 		if (pollingDuration > 900) {
-			sendLog("RCON server took too long (15 minutes) to start. Exiting...");
+			sendError("RCON server took too long (15 minutes) to start. Exiting...");
 
 			gameProcess.kill("SIGKILL");
 			process.exit(1);
@@ -255,7 +265,7 @@ var poll = function () {
 
 	ws.on("close", function () {
 		if (!waiting) {
-			sendLog("Connection to server closed.");
+			sendError("Connection to server closed.");
 
 			exited = true;
 			process.exit(0);
