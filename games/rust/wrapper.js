@@ -78,15 +78,13 @@ if (LOKI_ENABLED === true) {
                 basicAuth: `${LOKI_USERNAME}:${LOKI_PASSWORD}`,
                 labels: {
                     'job': 'pterodactyl_server',
-                    'server': {
-                        'uuid': process.env.P_SERVER_UUID,
-                        'timezone': process.env.TZ,
-                        'memory': process.env.SERVER_MEMORY,
-                        'ip': process.env.SERVER_IP,
-                        'port': process.env.SERVER_PORT,
-                        'location': process.env.P_SERVER_LOCATION
-                    },
-                    'hostname': process.env.HOSTNAME
+                    'server_uuid': process.env.P_SERVER_UUID,
+                    'server_timezone': process.env.TZ,
+                    'server_memory': process.env.SERVER_MEMORY,
+                    'server_ip': process.env.SERVER_IP,
+                    'server_port': process.env.SERVER_PORT,
+                    'server_location': process.env.P_SERVER_LOCATION,
+                    'server_hostname': process.env.HOSTNAME
                 },
                 format: format.json(),
                 replaceTimestamp: true,
