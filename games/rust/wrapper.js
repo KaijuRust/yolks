@@ -86,7 +86,7 @@ if (LOKI_ENABLED === true) {
                     'server_location': process.env.P_SERVER_LOCATION,
                     'server_hostname': process.env.HOSTNAME
                 },
-                format: format.json(),
+                format: format.printf(info => `${info.message}`),
                 replaceTimestamp: true,
                 onConnectionError: (err) => console.error(err)
             })
