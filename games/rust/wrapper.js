@@ -28,9 +28,9 @@ const logger = createLogger({
             filename: '%DATE%-server',
             datePattern: 'YYYY-MM-DD',
             maxFiles: '30d',
-            extension: 'log',
+            extension: '.log',
             createSymlink: true,
-            symlinkName: 'latest.log',
+            symlinkName: '../latest.log',
             format: combine(
                 timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
                 printf(info => `${info.timestamp} ${info.message}`)
