@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const fs = require('fs');
+const { performance } = require('perf_hooks');
 const { createLogger, format, transports } = require('winston');
 const { combine, timestamp, printf } = format;
 const LokiTransport = require('winston-loki');
@@ -21,13 +22,18 @@ if (fs.existsSync('logs/') === false) {
 
 const logger = createLogger({
     level: 'info',
+    format: format.combine(
+        format.splat(),
+        format.simple()
+    ),
+
     transports: [
         // Write log to disk
         new transports.DailyRotateFile({
             dirname: 'logs/',
             filename: '%DATE%-server',
             datePattern: 'YYYY-MM-DD',
-            maxFiles: '30d',
+            maxFiles: '35d',
             extension: '.log',
             createSymlink: true,
             symlinkName: '../latest.log',
@@ -41,7 +47,7 @@ const logger = createLogger({
         new transports.Console({
             format: combine(
                 timestamp({ format: 'HH:mm:ss' }),
-                printf(info => `${info.timestamp} ${info.message}`)
+                printf(info => `[${info.timestamp}] ${info.message}`)
             ),
         }),
     ],
@@ -52,32 +58,53 @@ const logger = createLogger({
 // Loki support
 //
 
-if (process.env.LOKI_PASSWORD && process.env.LOKI_PASSWORD.length > 0) {
+let LOKI_ENABLED = /^(?:y|yes|true|1|on)$/i.test(String(process.env.LOKI_ENABLED ?? 'false').trim())
+if (LOKI_ENABLED === true) {
 
-    // Create a Pino Loki transport
-    logger.add(new LokiTransport({
-        host: 'https://logs-prod-026.grafana.net',
-        json: true,
-        batching: false,
-        basicAuth: `857711:${process.env.LOKI_PASSWORD}`,
-        labels: { 'app': 'grafanacloud-kaijuhosting-logs', 'server_name': process.env.HOSTNAME },
-        format: format.json(),
-        replaceTimestamp: true,
-        onConnectionError: (err) => console.error(err)
-    }));
+    let LOKI_HOST = process.env.LOKI_HOST
+    let LOKI_USERNAME = process.env.LOKI_USERNAME
+    let LOKI_PASSWORD = process.env.LOKI_PASSWORD
+
+    // Validate input
+    let validConfig = [LOKI_HOST, LOKI_USERNAME, LOKI_PASSWORD].every(i => typeof i === 'string' && i.length > 0)
+    if (validConfig === true) {
+        // Create Loki log transport
+        logger.add(
+            new LokiTransport({
+                host: LOKI_HOST,
+                json: true,
+                batching: false,
+                clearOnError: true,
+                basicAuth: `${LOKI_USERNAME}:${LOKI_PASSWORD}`,
+                labels: {
+                    'job': 'pterodactyl_server',
+                    'server': {
+                        'uuid': process.env.P_SERVER_UUID,
+                        'timezone': process.env.TZ,
+                        'memory': process.env.SERVER_MEMORY,
+                        'ip': process.env.SERVER_IP,
+                        'port': process.env.SERVER_PORT,
+                        'location': process.env.P_SERVER_LOCATION
+                    },
+                    'hostname': process.env.HOSTNAME
+                },
+                format: format.json(),
+                replaceTimestamp: true,
+                onConnectionError: (err) => console.error(err)
+            })
+        );
+    }
 
 }
 
 function sendLog(message) {
-    var processed = message.replace(/(^\s*(?!.+)\n+)|(\n+\s+(?!.+)$)/g, "")
+    var processed = message.replace(/(^\s*(?!.+)\n+)|(\n+\s+(?!.+)$)/g, "").trim()
     if (processed.length === 0) return
     logger.info(processed)
 }
 
-
 var startupCmd = "";
 
-const {performance} = require('perf_hooks');
 
 var args = process.argv.splice(process.execArgv.length + 2);
 for (var i = 0; i < args.length; i++) {
@@ -186,6 +213,7 @@ var poll = function () {
 		gameProcess.stdout.removeListener('data', filter);
 		gameProcess.stderr.removeListener('data', filter);
 		process.stdin.on('data', function (text) {
+		    sendLog(`Transmitting console input: ${text}`);
 			ws.send(createPacket(text));
 		});
 	});
