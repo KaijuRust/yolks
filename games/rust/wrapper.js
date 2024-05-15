@@ -1,38 +1,72 @@
 #!/usr/bin/env node
 
+const fs = require('fs');
 const { createLogger, format, transports } = require('winston');
 const { combine, timestamp, printf } = format;
 const LokiTransport = require('winston-loki');
+require('winston-daily-rotate-file');
 
-// Create a Pino Loki transport
-const lokiTransport = new LokiTransport({
-  host: 'https://logs-prod-026.grafana.net',
-  json: true,
-  batching: false,
-  basicAuth: `857711:${process.env.LOKI_PASSWORD}`,
-  labels: { 'app': 'grafanacloud-kaijuhosting-logs', 'server_name': process.env.HOSTNAME },
-  format: format.json(),
-  replaceTimestamp: true,
-  onConnectionError: (err) => console.error(err)
-});
+//
+// Validate log directory
+//
 
-const myFormat = printf(({ message, timestamp }) => {
-  return `${timestamp} ${message}`;
-});
+if (fs.existsSync('logs/') === false) {
+    fs.mkdirSync('logs/')
+}
 
-// Create a Winston logger
+
+//
+// Winston logger
+//
+
 const logger = createLogger({
-  level: 'info',
-  format: combine(
-      timestamp(),
-      myFormat
-  ),
-  transports: [
-    lokiTransport, // Add Pino Loki transport
-    new transports.File({ filename: 'latest.log' }),
-    new transports.Console(), // Add other transports if needed
-  ],
+    level: 'info',
+    transports: [
+        // Write log to disk
+        new transports.DailyRotateFile({
+            dirname: 'logs/',
+            filename: '%DATE%-server',
+            datePattern: 'YYYY-MM-DD',
+            maxFiles: '30d',
+            extension: 'log',
+            createSymlink: true,
+            symlinkName: 'latest.log',
+            format: combine(
+                timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+                printf(info => `${info.timestamp} ${info.message}`)
+            ),
+        }),
+
+        // Console output
+        new transports.Console({
+            format: combine(
+                timestamp({ format: 'HH:mm:ss' }),
+                printf(info => `${info.timestamp} ${info.message}`)
+            ),
+        }),
+    ],
 });
+
+
+//
+// Loki support
+//
+
+if (process.env.LOKI_PASSWORD && process.env.LOKI_PASSWORD.length > 0) {
+
+    // Create a Pino Loki transport
+    logger.add(new LokiTransport({
+        host: 'https://logs-prod-026.grafana.net',
+        json: true,
+        batching: false,
+        basicAuth: `857711:${process.env.LOKI_PASSWORD}`,
+        labels: { 'app': 'grafanacloud-kaijuhosting-logs', 'server_name': process.env.HOSTNAME },
+        format: format.json(),
+        replaceTimestamp: true,
+        onConnectionError: (err) => console.error(err)
+    }));
+
+}
 
 function sendLog(message) {
     var processed = message.replace(/(^\s*(?!.+)\n+)|(\n+\s+(?!.+)$)/g, "")

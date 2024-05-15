@@ -40,6 +40,7 @@ RUN			dpkg --add-architecture i386 \
 			&& npm install --prefix / perf_hooks \
 			&& npm install --prefix / winston \
 			&& npm install --prefix / winston-loki \
+			&& npm install --prefix / winston-daily-rotate-file \
 			&& useradd -d /home/container -m container
 
 USER 		container
