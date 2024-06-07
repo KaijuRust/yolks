@@ -30,6 +30,7 @@ const logger = createLogger({
     transports: [
         // Write log to disk
         new transports.DailyRotateFile({
+            level: 'debug',
             dirname: 'logs/',
             filename: '%DATE%-server',
             datePattern: 'YYYY-MM-DD',
@@ -45,6 +46,7 @@ const logger = createLogger({
 
         // Console output
         new transports.Console({
+            level: 'info',
             format: combine(
                 timestamp({ format: 'HH:mm:ss' }),
                 printf(info => `[${info.timestamp}] ${info.message}`)
@@ -71,6 +73,7 @@ if (LOKI_ENABLED === true) {
         // Create Loki log transport
         logger.add(
             new LokiTransport({
+                level: 'debug',
                 host: LOKI_HOST,
                 json: true,
                 batching: false,
@@ -112,9 +115,14 @@ function sendError(message) {
     logger.error(processed)
 }
 
+function sendDebug(message) {
+    var processed = message.replace(/(^\s*(?!.+)\n+)|(\n+\s+(?!.+)$)/g, "").trim()
+    if (processed.length === 0) return
+    logger.debug(processed)
+}
+
+
 var startupCmd = "";
-
-
 var args = process.argv.splice(process.execArgv.length + 2);
 for (var i = 0; i < args.length; i++) {
 	if (i === args.length - 1) {
@@ -134,7 +142,20 @@ const seenPercentage = {};
 function filter(data) {
 	const str = data.toString();
 
-	if (str.startsWith("Loading Prefab Bundle ")) { // Rust seems to spam the same percentage, so filter out any duplicates.
+	// Filter out fallback handler messages
+	if (str.startsWith("Fallback handler could not load library")) {
+	   sendDebug(str);
+	   return;
+	}
+
+	// Filter shader errors and warnings
+	if (str.includes("ERROR: Shader ") || str.includes("WARNING: Shader ")) {
+        sendDebug(str);
+        return;
+	}
+
+	// Rust seems to spam the same percentage, so filter out any duplicates.
+	if (str.startsWith("Loading Prefab Bundle ")) {
 		const percentage = str.substr("Loading Prefab Bundle ".length);
 		if (seenPercentage[percentage]) return;
 
