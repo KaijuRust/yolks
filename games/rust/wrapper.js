@@ -98,7 +98,18 @@ if (LOKI_ENABLED === true) {
 
 }
 
-function sendLog(message) {
+function sendLog(input) {
+    var message = input;
+
+    // Input isn't a string
+    if (typeof input !== 'string' || input instanceof String === false) {
+        if (input.toString && input.toString()) {
+            message = input.toString();
+        } else {
+            return;
+        }
+    }
+
     var processed = message.replace(/(^\s*(?!.+)\n+)|(\n+\s+(?!.+)$)/g, "").trim()
     if (processed.length === 0) return
 
@@ -109,13 +120,35 @@ function sendLog(message) {
     }
 }
 
-function sendError(message) {
+function sendError(input) {
+    var message = input;
+
+    // Input isn't a string
+    if (typeof input !== 'string' || input instanceof String === false) {
+        if (input.toString && input.toString()) {
+            message = input.toString();
+        } else {
+            return;
+        }
+    }
+
     var processed = message.replace(/(^\s*(?!.+)\n+)|(\n+\s+(?!.+)$)/g, "").trim()
     if (processed.length === 0) return
     logger.error(processed)
 }
 
-function sendDebug(message) {
+function sendDebug(input) {
+    var message = input;
+
+    // Input isn't a string
+    if (typeof input !== 'string' || input instanceof String === false) {
+        if (input.toString && input.toString()) {
+            message = input.toString();
+        } else {
+            return;
+        }
+    }
+
     var processed = message.replace(/(^\s*(?!.+)\n+)|(\n+\s+(?!.+)$)/g, "").trim()
     if (processed.length === 0) return
     logger.debug(processed)
