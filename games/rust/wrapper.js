@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+const os = require('os')
+const process = require('process');
 const fs = require('fs');
 const { performance } = require('perf_hooks');
 const { createLogger, format, transports } = require('winston');
@@ -134,6 +136,23 @@ function sendError(input) {
 
     var processed = message.replace(/(^\s*(?!.+)\n+)|(\n+\s+(?!.+)$)/g, "").trim()
     if (processed.length === 0) return
+
+	
+    // Add uptime to error message
+    processed += `\n\t|=> Uptime: ${process.uptime()} (OS: ${os.uptime()})`
+
+    // Add load averages to error message
+    processed += `\n\t|=> Load Averages: ${os.loadavg().join(', ')}`
+
+    // Add memory to error message
+    processed += `\n\t|=> Memory: free:${os.freemem()}, total:${os.totalmem()}`
+
+    // Add OS cpu, total memory and free memory to error message
+    processed += `\n\t|=> CPUs: ${JSON.stringify(os.cpus())}`
+
+    // Add process memory usage to error message
+    processed += `\n\t|=> Process Memory: ${JSON.stringify(process.memoryUsage())}`
+	
     logger.error(processed)
 }
 
@@ -317,9 +336,9 @@ var poll = function () {
 		setTimeout(poll, 5000);
 	});
 
-	ws.on("close", function () {
+	ws.on("close", function (ws, code, reason) {
 		if (!waiting) {
-			sendError("Connection to server closed.");
+			sendError(`Connection to server closed. (Code: ${code}, Reason: ${reason.toString()})`);
 
 			exited = true;
 			process.exit(0);
