@@ -338,7 +338,7 @@ var poll = function () {
 
 	ws.on("close", function (ws, code, reason) {
 		if (!waiting) {
-			sendError(`Connection to server closed. (Code: ${code}, Reason: ${reason.toString()})`);
+			sendError(`Connection to server closed. (Code: ${code}, Reason: ${(reason) ? reason.toString() ?? reason : 'no reason'})`);
 
 			exited = true;
 			process.exit(0);
