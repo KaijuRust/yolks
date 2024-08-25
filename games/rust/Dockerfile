@@ -24,6 +24,7 @@ FROM        --platform=$TARGETOS/$TARGETARCH debian:bookworm-slim
 
 LABEL       author="JackoPlane" maintainer="JackoPlane"
 
+LABEL       org.opencontainers.image.source https://github.com/KaijuRust/yolks
 LABEL       org.opencontainers.image.source="https://github.com/KaijuRust/yolks"
 LABEL       org.opencontainers.image.licenses=MIT
 
@@ -36,7 +37,7 @@ RUN         dpkg --add-architecture i386 \
             && apt install -y lib32gcc-s1 lib32stdc++6 unzip curl iproute2 tzdata libgdiplus libsdl2-2.0-0:i386 jq
 
 # Install NodeJS
-RUN			curl -fsSL https://deb.nodesource.com/setup_20.x -o nodesource_setup.sh \
+RUN			curl -fsSL https://deb.nodesource.com/setup_22.x -o nodesource_setup.sh \
    	        && bash nodesource_setup.sh \
             && apt-get install -y nodejs \
             && node --version \
