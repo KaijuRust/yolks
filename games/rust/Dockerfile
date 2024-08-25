@@ -38,8 +38,6 @@ RUN         dpkg --add-architecture i386 \
             && apt upgrade -y \
             && apt install -y lib32gcc-s1 lib32stdc++6 unzip curl iproute2 tzdata libgdiplus libsdl2-2.0-0:i386 jq
 
-WORKDIR     /home/container
-
 # Download dependencies as a separate step to take advantage of Docker's caching.
 # Leverage a cache mount to /root/.npm to speed up subsequent builds.
 # Leverage a bind mounts to package.json and package-lock.json to avoid having to copy them into
@@ -49,10 +47,18 @@ RUN         --mount=type=bind,source=package.json,target=package.json \
             --mount=type=cache,target=/root/.npm \
             npm ci --omit=dev
 
+# Define user environment
+RUN 			useradd -d /home/container -m container
+USER        	container
+ENV         	USER=container HOME=/home/container
+
+WORKDIR     /home/container
+
 # Run the application as a non-root user.
-USER node
+# USER node
 
 # Copy the rest of the source files into the image.
+COPY        . .
 COPY        ./wrapper.js /wrapper.js
 COPY        ./entrypoint.sh /entrypoint.sh
 
