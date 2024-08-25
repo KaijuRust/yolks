@@ -32,13 +32,13 @@ LABEL       org.opencontainers.image.licenses MIT
 ENV         DEBIAN_FRONTEND=noninteractive
 ENV         NODE_ENV=production
 
-WORKDIR     /home/container
-
 # Install Dependancies
 RUN         dpkg --add-architecture i386 \
             && apt update \
             && apt upgrade -y \
             && apt install -y lib32gcc-s1 lib32stdc++6 unzip curl iproute2 tzdata libgdiplus libsdl2-2.0-0:i386 jq
+
+WORKDIR     /home/container
 
 # Download dependencies as a separate step to take advantage of Docker's caching.
 # Leverage a cache mount to /root/.npm to speed up subsequent builds.
