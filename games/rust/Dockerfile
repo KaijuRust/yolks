@@ -20,15 +20,19 @@
 # SOFTWARE.
 #
 
-FROM        --platform=$TARGETOS/$TARGETARCH debian:bookworm-slim
+ARG         NODE_VERSION=current
+
+FROM        --platform=$TARGETOS/$TARGETARCH node:${NODE_VERSION}-bookworm-slim
 
 LABEL       author="JackoPlane" maintainer="JackoPlane"
 
 LABEL       org.opencontainers.image.source https://github.com/KaijuRust/yolks
-LABEL       org.opencontainers.image.source="https://github.com/KaijuRust/yolks"
-LABEL       org.opencontainers.image.licenses=MIT
+LABEL       org.opencontainers.image.licenses MIT
 
 ENV         DEBIAN_FRONTEND=noninteractive
+ENV         NODE_ENV=production
+
+WORKDIR     /home/container
 
 # Install Dependancies
 RUN         dpkg --add-architecture i386 \
@@ -36,36 +40,21 @@ RUN         dpkg --add-architecture i386 \
             && apt upgrade -y \
             && apt install -y lib32gcc-s1 lib32stdc++6 unzip curl iproute2 tzdata libgdiplus libsdl2-2.0-0:i386 jq
 
-# Install NodeJS
-RUN			curl -fsSL https://deb.nodesource.com/setup_22.x -o nodesource_setup.sh \
-   	        && bash nodesource_setup.sh \
-            && apt-get install -y nodejs \
-            && node --version \
-            && npm --version
+# Download dependencies as a separate step to take advantage of Docker's caching.
+# Leverage a cache mount to /root/.npm to speed up subsequent builds.
+# Leverage a bind mounts to package.json and package-lock.json to avoid having to copy them into
+# into this layer.
+RUN         --mount=type=bind,source=package.json,target=package.json \
+            --mount=type=bind,source=package-lock.json,target=package-lock.json \
+            --mount=type=cache,target=/root/.npm \
+            npm ci --omit=dev
 
-# Install Websocket NPM Package
-RUN			mkdir -p /node_modules/ws /tmp/ws \
-            && curl -L $(curl -s https://api.github.com/repos/websockets/ws/releases/latest | jq -r '.zipball_url') -o ws-latest.zip \
-            && unzip ws-latest.zip -d /tmp/ws \
-            && mv /tmp/ws/*/* /node_modules/ws \
-            && rm -rf /tmp/ws \
-            && npm install -g bufferutil
+# Run the application as a non-root user.
+USER node
 
-# Install Performance Hooks and Winston NPM Packages
-RUN			npm install -g perf_hooks \
-            && npm install -g winston \
-            && npm install -g winston-daily-rotate-file
-
-# Define user environment
-RUN 		useradd -d /home/container -m container
-USER        container
-ENV         USER=container HOME=/home/container
-
-# Switch to the container of the server
-WORKDIR     /home/container
-
-# Copy some files over to the container
+# Copy the rest of the source files into the image.
 COPY        ./wrapper.js /wrapper.js
 COPY        ./entrypoint.sh /entrypoint.sh
 
+# Run the application.
 CMD         [ "/bin/bash", "/entrypoint.sh" ]
