@@ -6,7 +6,6 @@ const fs = require('fs');
 const { performance } = require('perf_hooks');
 const { createLogger, format, transports } = require('winston');
 const { combine, timestamp, printf } = format;
-const LokiTransport = require('winston-loki');
 require('winston-daily-rotate-file');
 
 //
@@ -17,17 +16,13 @@ if (fs.existsSync('logs/') === false) {
     fs.mkdirSync('logs/')
 }
 
-
 //
 // Winston logger
 //
 
 const logger = createLogger({
     level: 'info',
-    format: format.combine(
-        format.splat(),
-        format.simple()
-    ),
+    format: format.combine(format.splat(), format.simple()),
 
     transports: [
         // Write log to disk
@@ -35,8 +30,8 @@ const logger = createLogger({
             level: 'debug',
             dirname: 'logs/',
             filename: '%DATE%-server',
-            datePattern: 'YYYY-MM-DD',
-            maxFiles: '35d',
+            datePattern: 'DD-MM-YYYY',
+            maxFiles: '7d',
             extension: '.log',
             createSymlink: true,
             symlinkName: '../latest.log',
@@ -56,49 +51,6 @@ const logger = createLogger({
         }),
     ],
 });
-
-
-//
-// Loki support
-//
-
-let LOKI_ENABLED = /^(?:y|yes|true|1|on)$/i.test(String(process.env.LOKI_ENABLED ?? 'false').trim())
-if (LOKI_ENABLED === true) {
-
-    let LOKI_HOST = process.env.LOKI_HOST
-    let LOKI_USERNAME = process.env.LOKI_USERNAME
-    let LOKI_PASSWORD = process.env.LOKI_PASSWORD
-
-    // Validate input
-    let validConfig = [LOKI_HOST, LOKI_USERNAME, LOKI_PASSWORD].every(i => typeof i === 'string' && i.length > 0)
-    if (validConfig === true) {
-        // Create Loki log transport
-        logger.add(
-            new LokiTransport({
-                level: 'debug',
-                host: LOKI_HOST,
-                json: true,
-                batching: false,
-                clearOnError: true,
-                basicAuth: `${LOKI_USERNAME}:${LOKI_PASSWORD}`,
-                labels: {
-                    'job': 'pterodactyl_server',
-                    'server_uuid': process.env.P_SERVER_UUID,
-                    'server_timezone': process.env.TZ,
-                    'server_memory': process.env.SERVER_MEMORY,
-                    'server_ip': process.env.SERVER_IP,
-                    'server_port': process.env.SERVER_PORT,
-                    'server_location': process.env.P_SERVER_LOCATION,
-                    'server_hostname': process.env.HOSTNAME
-                },
-                format: format.printf(info => `${info.message}`),
-                replaceTimestamp: true,
-                onConnectionError: (err) => console.error(err)
-            })
-        );
-    }
-
-}
 
 function sendLog(input) {
     var message = input;
@@ -137,22 +89,22 @@ function sendError(input) {
     var processed = message.replace(/(^\s*(?!.+)\n+)|(\n+\s+(?!.+)$)/g, "").trim()
     if (processed.length === 0) return
 
-	
+
     // Add uptime to error message
-    processed += `\n\t|=> Uptime: ${process.uptime()} (OS: ${os.uptime()})`
+    processed += `\n\t|=> Uptime: ${Math.floor(process.uptime())} seconds (OS: ${Math.floor(os.uptime())} seconds)`
 
     // Add load averages to error message
     processed += `\n\t|=> Load Averages: ${os.loadavg().join(', ')}`
 
     // Add memory to error message
-    processed += `\n\t|=> Memory: free:${os.freemem()}, total:${os.totalmem()}`
+    processed += `\n\t|=> Memory: Free ${os.freemem()}, Total ${os.totalmem()}`
 
     // Add OS cpu, total memory and free memory to error message
     processed += `\n\t|=> CPUs: ${JSON.stringify(os.cpus())}`
 
     // Add process memory usage to error message
     processed += `\n\t|=> Process Memory: ${JSON.stringify(process.memoryUsage())}`
-	
+
     logger.error(processed)
 }
 
@@ -248,7 +200,7 @@ process.stdin.on('data', initialListener);
 process.on('exit', function (code) {
 	if (exited) return;
 
-	sendError("Received request to stop the process, stopping the game...");
+	sendError(`Received request to stop the process (Code: ${code}), stopping the game...`);
 
 	gameProcess.kill('SIGTERM');
 });
