@@ -23,21 +23,21 @@ if (fs.existsSync('logs/') === false) {
 const mutateMessage = format((info) => {
 	switch (info.level.toUpperCase()) {
 		case 'ERROR':
-			info.label = '\x1b[1;31m[Error]\x1b[0m';
+			info.meta = { level: '\x1b[1;31m[Error]\x1b[0m' };
 			info.message = '\x1b[0;31m' + info.message + '\x1b[0m';
 		case 'WARN':
 		case 'WARNING':
-			info.label = '\x1b[0;38m[Warning]\x1b[0m';
+			info.meta = { level: '\x1b[0;38m[Warning]\x1b[0m' };
 		case 'INFO':
 		case 'HTTP':
 		case 'VERBOSE':
-			info.label = '\x1b[0;34m[Info]\x1b[0m';
+			info.meta = { level: '\x1b[0;34m[Info]\x1b[0m' };
 		case 'DEBUG':
-			info.label = '\x1b[0;35m[Debug]\x1b[0m';
+			info.meta = { level: '\x1b[0;35m[Debug]\x1b[0m' };
 		case 'SILLY':
-			info.label = '\x1b[0;36m[Silly]\x1b[0m';
+			info.meta = { level: '\x1b[0;36m[Silly]\x1b[0m' };
 		default:
-			info.label = '\x1b[0;37m[' + info.level.toUpperCase() + ']\x1b[0m';
+			info.meta = { level: '\x1b[0;37m[' + info.level.toUpperCase() + ']\x1b[0m' };
 	}
 
 	return info;
@@ -60,7 +60,7 @@ const logger = createLogger({
             symlinkName: '../latest.log',
             format: combine(
                 timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-                printf(info => `${info.timestamp} ${info.label} ${info.message}`)
+                printf(info => `${info.timestamp} ${info.meta.level} ${info.message}`)
             ),
         }),
 
