@@ -5,7 +5,7 @@ const process = require('process');
 const fs = require('fs');
 const { performance } = require('perf_hooks');
 const { createLogger, format, transports } = require('winston');
-const { combine, timestamp, printf } = format;
+const { combine, timestamp, printf, label } = format;
 require('winston-daily-rotate-file');
 
 //
@@ -37,7 +37,7 @@ const logger = createLogger({
             symlinkName: '../latest.log',
             format: combine(
                 timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-                printf(info => `${info.timestamp} ${info.message}`)
+                printf(info => `${info.timestamp} ${info.label} ${info.message}`)
             ),
         }),
 
@@ -45,8 +45,22 @@ const logger = createLogger({
         new transports.Console({
             level: 'info',
             format: combine(
-                timestamp({ format: 'HH:mm:ss' }),
-                printf(info => `[${info.timestamp}] ${info.message}`)
+                timestamp({ format: 'DD-MM HH:mm:ss' }),
+				label(info => {
+					switch (info.level.toUpperCase()) {
+						case 'ERROR':
+							return '[Error]';
+						case 'WARNING':
+							return '[Warning]';
+						case 'INFO':
+							return '[Info]';
+						case 'DEBUG':
+							return '[Debug]';
+						default:
+							return `[${info.level.toUpperCase()}]`;
+					}
+				}),
+                printf(info => `${info.timestamp} ${info.label} ${info.message}`)
             ),
         }),
     ],
@@ -142,9 +156,15 @@ if (startupCmd.length < 1) {
 }
 
 const seenPercentage = {};
+let hostnameDetected = false;
 
 function filter(data) {
 	const str = data.toString();
+
+	// Prevent double logging after hostname is detected
+	if (hostnameDetected) {
+		return;  // Exit if we've already detected the hostname
+	}
 
 	// Filter out fallback handler messages
 	if (str.startsWith("Fallback handler could not load library")) {
@@ -152,10 +172,25 @@ function filter(data) {
 	   return;
 	}
 
+	// Remove bindings.h errors
+	if (str.includes("Filename:")) {
+		return;
+	}
+
 	// Filter shader errors and warnings
 	if (str.includes("ERROR: Shader ") || str.includes("WARNING: Shader ")) {
         sendDebug(str);
         return;
+	}
+
+	// Remove specific Behaviour script errors
+	if (str.includes("The referenced script on this Behaviour")) {
+		return;
+	}
+
+	// Remove RuntimeNavMeshBuilder messages
+    if (str.includes("RuntimeNavMeshBuilder:")) {
+		return;
 	}
 
 	// Rust seems to spam the same percentage, so filter out any duplicates.
@@ -165,6 +200,11 @@ function filter(data) {
 
 		seenPercentage[percentage] = true;
 	}
+
+    // Detect when hostname has been logged
+    if (str.startsWith("hostname:")) {
+        hostnameDetected = true;  // Set the flag to true after first occurrence
+    }
 
 	sendLog(str);
 }

@@ -62,5 +62,7 @@ COPY        . .
 COPY        ./wrapper.js /wrapper.js
 COPY        ./entrypoint.sh /entrypoint.sh
 
+COPY        --chmod=0755 ./helpers /helpers
+
 # Run the application.
 CMD         [ "/bin/bash", "/entrypoint.sh" ]
