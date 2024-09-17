@@ -20,6 +20,21 @@ if (fs.existsSync('logs/') === false) {
 // Winston logger
 //
 
+const mutateMessage = format((info) => {
+	switch (info.level.toUpperCase()) {
+		case 'ERROR':
+			info.label = '[Error]';
+		case 'WARNING':
+			info.label = '[Warning]';
+		case 'INFO':
+			info.label = '[Info]';
+		case 'DEBUG':
+			info.label = '[Debug]';
+	}
+
+	return info;
+ });
+
 const logger = createLogger({
     level: 'info',
     format: format.combine(format.splat(), format.simple()),
@@ -45,21 +60,8 @@ const logger = createLogger({
         new transports.Console({
             level: 'info',
             format: combine(
+				mutateMessage(),
                 timestamp({ format: 'DD-MM HH:mm:ss' }),
-				label(info => {
-					switch (info.level.toUpperCase()) {
-						case 'ERROR':
-							return '[Error]';
-						case 'WARNING':
-							return '[Warning]';
-						case 'INFO':
-							return '[Info]';
-						case 'DEBUG':
-							return '[Debug]';
-						default:
-							return `[${info.level.toUpperCase()}]`;
-					}
-				}),
                 printf(info => `${info.timestamp} ${info.label} ${info.message}`)
             ),
         }),
