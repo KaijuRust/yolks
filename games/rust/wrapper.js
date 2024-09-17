@@ -5,9 +5,8 @@ const process = require('process');
 const fs = require('fs');
 const { performance } = require('perf_hooks');
 const { createLogger, format, transports } = require('winston');
-const { combine, timestamp, printf, colorize } = format;
+const { combine, timestamp, printf } = format;
 require('winston-daily-rotate-file');
-const LEVEL = Symbol.for('level');
 
 //
 // Validate log directory
@@ -20,14 +19,6 @@ if (fs.existsSync('logs/') === false) {
 //
 // Winston logger
 //
-
-function filterOnly(level) {
-	return format(function (info) {
-	  if (info[LEVEL] === level) {
-		return info;
-	  }
-	})();
-  }
 
 const mutateMessage = format((info) => {
 	switch (info.level.toUpperCase()) {
@@ -76,11 +67,11 @@ const logger = createLogger({
         new transports.Console({
             level: 'info',
             format: combine(
-				// colorize({  message: true, label: true }),
-				filterOnly('info'),
-				mutateMessage(),
-                timestamp({ format: 'DD/MM/YY HH:mm:ss' }),
-                printf(info => '\x1b[0;90m' + info.timestamp + '\x1b[0m ' + info.message + '\x1b[0m')
+				timestamp({ format: 'HH:mm:ss' }),
+                printf(info => `[${info.timestamp}] ${info.message}`)
+				// mutateMessage(),
+                // timestamp({ format: 'DD/MM/YY HH:mm:ss' }),
+                // printf(info => '\x1b[0;90m' + info.timestamp + '\x1b[0m ' + info.message + '\x1b[0m')
             ),
         }),
     ],
