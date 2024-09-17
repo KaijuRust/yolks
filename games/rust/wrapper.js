@@ -70,8 +70,8 @@ const logger = createLogger({
             format: combine(
 				// colorize({  message: true, label: true }),
 				mutateMessage(),
-                timestamp({ format: 'DD-MM HH:mm:ss' }),
-                printf(info => '\x1b[0;37m' + info.timestamp + '\x1b[0m ' + info.label + " " + info.message + '\x1b[0m')
+                timestamp({ format: 'DD/MM/YY HH:mm:ss' }),
+                printf(info => '\x1b[0;90m' + info.timestamp + '\x1b[0m ' + info.label + " " + info.message + '\x1b[0m')
             ),
         }),
     ],
