@@ -59,7 +59,7 @@ const logger = createLogger({
             symlinkName: '../latest.log',
             format: combine(
                 timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-                printf(info => `${info.timestamp} ${info.meta.level} ${info.message}`)
+                printf(info => `${info.timestamp} ${info.level} ${info.message}`)
             ),
         }),
 
