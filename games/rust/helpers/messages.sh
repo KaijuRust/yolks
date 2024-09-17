@@ -38,7 +38,6 @@ function Success() {
 function Debug() {
 	if [[ "${EGG_DEBUG}" == "1" ]]; then
         LogMessage "${PURPLE}[DEBUG]${NC}" "$1"
-		echo $1
 	fi
 }
 

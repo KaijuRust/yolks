@@ -23,14 +23,14 @@ if (fs.existsSync('logs/') === false) {
 const mutateMessage = format((info) => {
 	switch (info.level.toUpperCase()) {
 		case 'ERROR':
-			info.label = "\e[1;31m[Error]\e[0m";
-			info.message = "\e[0;31m" + info.message + "\e[0m";
+			info.label = '\x1b[1;31m[Error]\x1b[0m';
+			info.message = '\x1b[0;31m' + info.message + '\x1b[0m';
 		case 'WARNING':
-			info.label = "\e[0;38m[Warning]\e[0m";
+			info.label = '\x1b[0;38m[Warning]\x1b[0m';
 		case 'INFO':
-			info.label = "\e[0;34m[Info]\e[0m";
+			info.label = '\x1b[0;34m[Info]\x1b[0m';
 		case 'DEBUG':
-			info.label = "\e[0;35m[Debug]\e[0m";
+			info.label = '\x1b[0;35m[Debug]\x1b[0m';
 	}
 
 	return info;
@@ -64,7 +64,7 @@ const logger = createLogger({
 				colorize({  message: true, label: true }),
 				mutateMessage(),
                 timestamp({ format: 'DD-MM HH:mm:ss' }),
-                printf(info => "\e[0;37m" + info.timestamp + "\e[0m " + info.label + " " + info.message + "\e[0m")
+                printf(info => '\x1b[0;37m' + info.timestamp + '\x1b[0m ' + info.label + " " + info.message + '\x1b[0m')
             ),
         }),
     ],
