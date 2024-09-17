@@ -24,13 +24,13 @@ const mutateMessage = format((info) => {
 	switch (info.level.toUpperCase()) {
 		case 'ERROR':
 			info.label = "\\033[1;31m[Error]\\033[0m";
-			info.message = `\\033[0;31m${info.message}\\033[0m`;
+			info.message = "\\033[0;31m" + info.message + "\\033[0m";
 		case 'WARNING':
-			info.label = '\\033[0;38m[Warning]\\033[0m';
+			info.label = "\\033[0;38m[Warning]\\033[0m";
 		case 'INFO':
-			info.label = '\\033[0;34m[Info]\\033[0m';
+			info.label = "\\033[0;34m[Info]\\033[0m";
 		case 'DEBUG':
-			info.label = '\\033[0;35m[Debug]\\033[0m';
+			info.label = "\\033[0;35m[Debug]\\033[0m";
 	}
 
 	return info;
@@ -62,9 +62,9 @@ const logger = createLogger({
             level: 'info',
             format: combine(
 				mutateMessage(),
-				colorize({ message: true, label: true }),
+				colorize({  message: true, label: true }),
                 timestamp({ format: 'DD-MM HH:mm:ss' }),
-                printf(info => `\\033[0;37m${info.timestamp}\\033[0m ${info.label} ${info.message}`)
+                printf(info => "\\033[0;37m" + info.timestamp + "\\033[0m " + info.label + " " + info.message + "\\033[0m")
             ),
         }),
     ],
