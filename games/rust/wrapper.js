@@ -61,7 +61,7 @@ const logger = createLogger({
         new transports.Console({
             level: 'info',
             format: combine(
-				colorize({  message: true, label: true }),
+				// colorize({  message: true, label: true }),
 				mutateMessage(),
                 timestamp({ format: 'DD-MM HH:mm:ss' }),
                 printf(info => '\x1b[0;37m' + info.timestamp + '\x1b[0m ' + info.label + " " + info.message + '\x1b[0m')
