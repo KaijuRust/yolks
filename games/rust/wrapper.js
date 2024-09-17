@@ -5,7 +5,7 @@ const process = require('process');
 const fs = require('fs');
 const { performance } = require('perf_hooks');
 const { createLogger, format, transports } = require('winston');
-const { combine, timestamp, printf, label } = format;
+const { combine, timestamp, printf, colorize } = format;
 require('winston-daily-rotate-file');
 
 //
@@ -23,7 +23,7 @@ if (fs.existsSync('logs/') === false) {
 const mutateMessage = format((info) => {
 	switch (info.level.toUpperCase()) {
 		case 'ERROR':
-			info.label = '\\033[1;31m[Error]\\033[0m';
+			info.label = "\\033[1;31m[Error]\\033[0m";
 			info.message = `\\033[0;31m${info.message}\\033[0m`;
 		case 'WARNING':
 			info.label = '\\033[0;38m[Warning]\\033[0m';
@@ -62,6 +62,7 @@ const logger = createLogger({
             level: 'info',
             format: combine(
 				mutateMessage(),
+				colorize({ message: true, label: true }),
                 timestamp({ format: 'DD-MM HH:mm:ss' }),
                 printf(info => `\\033[0;37m${info.timestamp}\\033[0m ${info.label} ${info.message}`)
             ),
