@@ -85,11 +85,13 @@ function sendLog(input) {
     var processed = message.replace(/(^\s*(?!.+)\n+)|(\n+\s+(?!.+)$)/g, "").trim()
     if (processed.length === 0) return
 
-    if (processed.startsWith('Exception thrown')) {
-        logger.warning(processed)
-    } else {
-        logger.info(processed)
-    }
+	processed.split(/\r?\n|\r|\n/g).forEach(line => {
+		if (line.startsWith('Exception thrown')) {
+			logger.warning(line)
+		} else {
+			logger.info(line)
+		}
+	});
 }
 
 function sendError(input) {
@@ -123,7 +125,9 @@ function sendError(input) {
     // Add process memory usage to error message
     processed += `\n\t|=> Process Memory: ${JSON.stringify(process.memoryUsage())}`
 
-    logger.error(processed)
+	processed.split(/\r?\n|\r|\n/g).forEach(line => {
+		logger.error(line)
+	})
 }
 
 function sendDebug(input) {
@@ -140,7 +144,10 @@ function sendDebug(input) {
 
     var processed = message.replace(/(^\s*(?!.+)\n+)|(\n+\s+(?!.+)$)/g, "").trim()
     if (processed.length === 0) return
-    logger.debug(processed)
+
+	processed.split(/\r?\n|\r|\n/g).forEach(line => {
+		logger.debug(line)
+	})
 }
 
 
